@@ -1,10 +1,10 @@
-# Use PHP with Composer
+# Use official PHP image with Composer
 FROM php:8.2-cli
 
 # Set working directory
 WORKDIR /var/www/html
 
-# Install system dependencies
+# Install system dependencies + Node.js for Vite
 RUN apt-get update && apt-get install -y \
     git \
     unzip \
@@ -20,21 +20,18 @@ RUN apt-get update && apt-get install -y \
 RUN php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');" \
     && php composer-setup.php --install-dir=/usr/local/bin --filename=composer
 
-# Copy composer files first (for caching)
-COPY composer.json composer.lock ./
+# Copy the entire project to Docker
+COPY . .
 
 # Install PHP dependencies
 RUN composer install --no-dev --optimize-autoloader
 
-# Copy the rest of the project
-COPY . .
-
-# Install Node.js dependencies and build Vite assets
+# Install Node dependencies and build Vite frontend
 RUN npm install
 RUN npm run build
 
-# Expose the port Laravel will run on
+# Expose Laravel port
 EXPOSE 8000
 
-# Command to run Laravel
+# Start Laravel server
 CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8000"]
